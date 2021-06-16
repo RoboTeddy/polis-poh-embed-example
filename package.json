@@ -4,6 +4,10 @@
   "main": "index.js",
   "author": "Unknown",
   "license": "MIT",
+  "scripts": {
+    "dev": "parcel index.html",
+    "build": "parcel build index.html"
+  },
   "dependencies": {
     "app": "0.1.0",
     "prettier": "2.3.1",
