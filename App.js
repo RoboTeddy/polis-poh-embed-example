@@ -42,6 +42,21 @@ export default function App() {
   const [humanityVerified, setHumanityVerified] = useState(null);
   const [address, setAddress] = useState(null);
 
+  useEffect(() => {
+    if (humanityVerified) {
+      const script = document.createElement("script");
+
+      script.src = "https://pol.is/embed.js";
+      script.async = true;
+
+      document.body.appendChild(script);
+
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [humanityVerified]);
+
   const metamaskPublicKey = "";
   const signature = "";
 
@@ -115,12 +130,14 @@ export default function App() {
           "Proof of Humanity failed to verify. Reconnect metamask."}
       </div>
 
-      <div
-        className="polis"
-        data-conversation_id="7rspmntfxw"
-        xid={`poh___${metamaskPublicKey}___${signature}`}
-        data-ucw="false"
-      />
+      {humanityVerified && (
+        <div
+          className="polis"
+          data-conversation_id="7rspmntfxw"
+          xid={`poh___${metamaskPublicKey}___${signature}`}
+          data-ucw="false"
+        />
+      )}
     </div>
   );
 }
