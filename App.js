@@ -14,16 +14,6 @@ const humanityContract = new web3.eth.Contract(
   proofOfHumanityAddress
 );
 
-humanityContract.methods
-  .isRegistered("0x34cf1af38adf9855d02062d044e36f351a7f9120")
-  .call()
-  .then(function (result) {
-    console.log("isRegistered result", result);
-  })
-  .catch(function (err) {
-    console.log("isRegistered", err);
-  });
-
 // TODO: handle missing window.ethereum
 
 // TODO: figure out how to handle state where we've requested connection to metamask, but not actually connected, and then the user reloads
@@ -42,7 +32,10 @@ humanityContract.methods
 
 // 4. filter out invalid xids (server side)
 
-function getIsRegisteredInProofOfHumanity(address) {}
+// returns a promise that resolves to `true` or `false`
+function getIsRegisteredInProofOfHumanity(address) {
+  return humanityContract.methods.isRegistered(address).call();
+}
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(null);
