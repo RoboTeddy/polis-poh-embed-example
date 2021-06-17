@@ -39,30 +39,35 @@ function getIsRegisteredInProofOfHumanity(address) {
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(null);
+  const [humanityVerified, setHumanityVerified] = useState(null);
   const [address, setAddress] = useState(null);
 
   const metamaskPublicKey = "";
   const signature = "";
 
-  function connect() {
-    ethereum
-      .request({ method: "eth_requestAccounts" })
-      .then((result) => {
-        if (result.length) {
-          setAddress(result[0]);
-          setIsConnected(true);
-        } else {
-          alert("No addresses found");
-        }
-      })
-      .catch((err) => {
-        setIsConnected(false);
-        setAddress(null);
-        if (err.code === -32002) {
-          alert("Please accept the metamask connection");
-          console.log("caught error during connection", err);
-        }
+  async function connect() {
+    try {
+      const arrayOfAddresses = await ethereum.request({
+        method: "eth_requestAccounts",
       });
+
+      if (arrayOfAddresses.length) {
+        setAddress(arrayOfAddresses[0]);
+        setIsConnected(true);
+        setHumanityVerified(
+          await getIsRegisteredInProofOfHumanity(arrayOfAddresses[0])
+        );
+      } else {
+        alert("No addresses found");
+      }
+    } catch (err) {
+      setIsConnected(false);
+      setAddress(null);
+      if (err.code === -32002) {
+        alert("Please accept the metamask connection");
+        console.log("caught error during connection", err);
+      }
+    }
   }
 
   useEffect(() => {
@@ -98,8 +103,16 @@ export default function App() {
       <h1> Welcome to dao governance land </h1>
 
       <div>
+        <h3> METAMASK </h3>
         {isConnected ? "Connected " + address : "Not connected"}
         {!isConnected && <button onClick={connect}>Connect</button>}
+      </div>
+      <div>
+        <h3>Proof of Humanity</h3>
+        {humanityVerified === null && "Humanity not verified"}
+        {humanityVerified === true && "Proof of Humanity successfully verified"}
+        {humanityVerified === false &&
+          "Proof of Humanity failed to verify. Reconnect metamask."}
       </div>
 
       <div
