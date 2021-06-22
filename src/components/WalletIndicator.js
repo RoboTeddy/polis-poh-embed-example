@@ -25,7 +25,7 @@ export default function WalletIndicator({address, reset, style}) {
         }}
       >
         <WalletIcon style={{width: 20, height: 20, paddingRight: 5}} />
-        {address.slice(0, 6)}...{address.slice(-4)}
+        {address.slice(0, 6).toUpperCase()}...{address.slice(-4).toUpperCase()}
       </div>
       <div
         style={{
