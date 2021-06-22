@@ -66,10 +66,16 @@ export default function App() {
     state.isWrongNetwork = onboardState.network !== NETWORK_ID
 
     // address changed; let's check to see if it's registered.
-    if (onboardState.address && state.address !== onboardState.address) {
+    if (
+      !state.isDisconnected &&
+      !state.isWrongNetwork &&
+      onboardState.address &&
+      state.address !== onboardState.address
+    ) {
       state.address = onboardState.address
       state.isCheckingRegistration = true
       state.isRegistered = null
+      bumpStateVersion()
 
       const isRegistered = await getIsRegisteredInProofOfHumanity(
         state.ethersProvider,
@@ -82,6 +88,7 @@ export default function App() {
       if (state.address === onboardState.address) {
         state.isRegistered = isRegistered
         state.isCheckingRegistration = false
+        state.signature = null
       }
     }
 
@@ -143,7 +150,7 @@ export default function App() {
       {state.isDisconnected || state.isCheckingRegistration ? (
         <ConnectWalletStep
           selectWallet={selectWallet}
-          isSelectingWallet={state.isSelectingWallet}
+          isBusy={state.isSelectingWallet || state.isCheckingRegistration}
         />
       ) : state.isWrongNetwork ? (
         <WrongNetworkStep />
@@ -169,7 +176,7 @@ export default function App() {
   )
 }
 
-function ConnectWalletStep({selectWallet, isSelectingWallet}) {
+function ConnectWalletStep({selectWallet, isBusy}) {
   return (
     <Step
       title="Sign In"
@@ -184,7 +191,7 @@ function ConnectWalletStep({selectWallet, isSelectingWallet}) {
         <Button
           label="Sign In with Proof of Humanity"
           onClick={selectWallet}
-          isBusy={isSelectingWallet}
+          isBusy={isBusy}
         />
       }
     />
