@@ -17,61 +17,75 @@ import ProofOfHumanityLogo from './images/poh.svg'
 
 let ethersProvider = null
 
-export default function App() {
-  const [isDisconnected, setIsDisconnected] = useState(true)
-  const [isSelectingWallet, setIsSelectingWallet] = useState(false)
-  const [isWrongNetwork, setIsWrongNetwork] = useState(null)
-  const [address, setAddress] = useState(null)
-  const [isCheckingRegistration, setIsCheckingRegistration] = useState(false)
-  const [isRegistered, setIsRegistered] = useState(null)
-  const [isSigning, setIsSigning] = useState(false)
-  const [signature, setSignature] = useState(null)
+const initialState = Object.freeze({
+  isDisconnected: true,
+  isSelectingWallet: false,
+  isWrongNetwork: null,
+  address: null,
+  ethersProvider: null,
+  isCheckingRegistration: false,
+  isRegistered: false,
+  isSigning: false,
+  signature: null,
+})
 
+function useStateVersion() {
+  const [stateVersion, setStateVersion] = useState(0)
+  function bumpStateVersion() {
+    setStateVersion((v) => v + 1)
+  }
+  return [stateVersion, bumpStateVersion]
+}
+
+export default function App() {
   const onboardRef = useRef(null)
-  const ethersProviderRef = useRef(null)
-  const addressRef = useRef(null)
-  const isSelectingWalletRef = useRef(false)
+  const stateRef = useRef({...initialState})
+  const [stateVersion, bumpStateVersion] = useStateVersion()
 
   // TODO: handle state in a single object that gets updated all at once
   // in order to avoid partially-handled state changes?
   async function handleOnboardStateChange() {
+    const state = stateRef.current
     // avoid handling the intermediary states that ocurr during wallet selection
     // because those states are weird: e.g. if `address` were `undefined`,
     // we wouldn't know if it were because there are no addresses in the wallet
     // or if it wer because the address just hadn't loaded yet.
-    if (isSelectingWalletRef.current) return
+    if (state.isSelectingWallet) return
 
-    const newState = onboardRef.current.getState()
+    const onboardState = onboardRef.current.getState()
 
-    const isDisconnected =
-      !newState.wallet.provider || !newState.network || !newState.address
-    setIsDisconnected(isDisconnected)
-    if (isDisconnected) return
+    state.isDisconnected =
+      !onboardState.wallet.provider ||
+      !onboardState.network ||
+      !onboardState.address
 
-    const isWrongNetwork = newState.network !== NETWORK_ID
-    setIsWrongNetwork(isWrongNetwork)
-    if (isWrongNetwork) return
+    state.ethersProvider =
+      onboardState.wallet.provider &&
+      new ethers.providers.Web3Provider(onboardState.wallet.provider)
 
-    setAddress(newState.address)
-    addressRef.current = newState.address
-    ethersProviderRef.current = new ethers.providers.Web3Provider(
-      newState.wallet.provider
-    )
+    state.isWrongNetwork = onboardState.network !== NETWORK_ID
 
-    setIsCheckingRegistration(true)
-    setIsRegistered(null)
-    const isRegistered = await getIsRegisteredInProofOfHumanity(
-      ethersProviderRef.current,
-      newState.address
-    )
+    // address changed; let's check to see if it's registered.
+    if (onboardState.address && state.address !== onboardState.address) {
+      state.address = onboardState.address
+      state.isCheckingRegistration = true
+      state.isRegistered = null
 
-    // handleOnboardChange could be called multiple times, e.g. if address
-    // was quickly changing. we only want to take into account a result for
-    // the latest address. (avoid race condition)
-    if (addressRef.current === newState.address) {
-      setIsRegistered(isRegistered)
-      setIsCheckingRegistration(false)
+      const isRegistered = await getIsRegisteredInProofOfHumanity(
+        state.ethersProvider,
+        state.address
+      )
+
+      // handleOnboardChange could be called multiple times, e.g. if address
+      // was quickly changing. we only want to take into account a result for
+      // the latest address. (avoid race condition)
+      if (state.address === onboardState.address) {
+        state.isRegistered = isRegistered
+        state.isCheckingRegistration = false
+      }
     }
+
+    bumpStateVersion()
   }
 
   useEffect(() => {
@@ -83,28 +97,29 @@ export default function App() {
   }, [])
 
   async function selectWallet() {
-    isSelectingWalletRef.current = true
-    setIsSelectingWallet(true)
+    state.isSelectingWallet = true
+    bumpStateVersion()
     try {
       const selectedWallet = await onboardRef.current.walletSelect()
-      if (selectedWallet) {
-        await onboardRef.current.walletCheck()
-      }
+      if (selectedWallet) await onboardRef.current.walletCheck()
     } catch (error) {
       console.log('caught error selecting wallet', error)
     }
-    isSelectingWalletRef.current = false
-    setIsSelectingWallet(false)
+    state.isSelectingWallet = false
+    bumpStateVersion()
 
-    handleOnboardStateChange()
+    await handleOnboardStateChange()
+
+    if (state.isRegistered) signIn()
   }
 
   async function signIn() {
-    const signer = ethersProviderRef.current.getSigner()
+    const signer = state.ethersProvider.getSigner()
     try {
-      setIsSigning(true)
+      state.isSigning = true
+      bumpStateVersion()
       const signature = await signer.signMessage(SIGN_IN_MESSAGE)
-      setSignature(signature)
+      state.signature = signature
     } catch (error) {
       if (error.code === 4001) {
         // user denied signature
@@ -112,38 +127,40 @@ export default function App() {
         throw error
       }
     }
-    setIsSigning(false)
+    state.isSigning = false
+    bumpStateVersion()
   }
 
   function reset() {
     onboardRef.current.walletReset()
-    setSignature(null)
+    stateRef.current = {...initialState}
     handleOnboardStateChange()
   }
 
+  const state = stateRef.current
   return (
     <Content>
-      {isDisconnected || isCheckingRegistration ? (
+      {state.isDisconnected || state.isCheckingRegistration ? (
         <ConnectWalletStep
           selectWallet={selectWallet}
-          isSelectingWallet={isSelectingWallet}
+          isSelectingWallet={state.isSelectingWallet}
         />
-      ) : isWrongNetwork ? (
+      ) : state.isWrongNetwork ? (
         <WrongNetworkStep />
-      ) : isRegistered === false ? (
+      ) : state.isRegistered === false ? (
         <NotRegisteredStep reset={reset} />
-      ) : !signature ? (
-        <SignInStep signIn={signIn} isSigning={isSigning} />
+      ) : !state.signature ? (
+        <SignInStep signIn={signIn} isSigning={state.isSigning} />
       ) : (
         <PolisConversation
           data-conversation_id={POLIS_CONVERSATION_ID}
-          xid={signature}
+          xid={state.signature}
           data-ucw="false"
         />
       )}
-      {!isDisconnected && address && (
+      {!state.isDisconnected && state.address && (
         <WalletIndicator
-          address={address}
+          address={state.address}
           reset={reset}
           style={{position: 'fixed', top: '30px', right: '30px'}}
         />
@@ -155,12 +172,17 @@ export default function App() {
 function ConnectWalletStep({selectWallet, isSelectingWallet}) {
   return (
     <Step
-      title="Connect Wallet"
-      subtitle="So you can sign in with Proof of Humanity"
-      image={<ProofOfHumanityLogo />}
+      title="Sign In"
+      subtitle="So you can join the Pol.is conversation"
+      image={
+        <img
+          style={{width: 120}}
+          src="https://cdn-images-1.medium.com/max/1200/1*vAUO1O51vT2Mt_W_qy1qBQ.png"
+        />
+      }
       button={
         <Button
-          label="Connect Wallet"
+          label="Sign In with Proof of Humanity"
           onClick={selectWallet}
           isBusy={isSelectingWallet}
         />
@@ -217,7 +239,13 @@ function SignInStep({signIn, isSigning}) {
           src="https://cdn-images-1.medium.com/max/1200/1*vAUO1O51vT2Mt_W_qy1qBQ.png"
         />
       }
-      button={<Button label="Sign In" onClick={signIn} isBusy={isSigning} />}
+      button={
+        <Button
+          label="Sign In with Proof of Humanity"
+          onClick={signIn}
+          isBusy={isSigning}
+        />
+      }
     />
   )
 }
