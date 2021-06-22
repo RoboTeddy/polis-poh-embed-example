@@ -15,7 +15,7 @@ const topStyle = {
 }
 
 const bottomStyle = {
-  height: 40,
+  height: 48,
 }
 
 const titleStyle = {
@@ -36,6 +36,7 @@ export default function SignInStep({title, subtitle, image, button}) {
         <h1 style={titleStyle}>{title}</h1>
         <span style={subtitleStyle}>{subtitle}</span>
       </div>
+      {image}
       <div style={bottomStyle}>{button}</div>
     </div>
   )

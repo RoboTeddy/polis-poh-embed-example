@@ -10,6 +10,7 @@ const containerStyle = {
 const contentStyle = {
   backgroundColor: 'white',
   borderRadius: 8,
+  overflow: 'hidden',
 }
 
 export default function Content({children}) {

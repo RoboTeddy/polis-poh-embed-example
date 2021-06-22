@@ -1,4 +1,3 @@
-import 'regenerator-runtime/runtime'
 import React, {useEffect, useState, useRef} from 'react'
 import {ethers} from 'ethers' // TODO: import more specific thing?
 
@@ -6,8 +5,12 @@ import {NETWORK_ID, POLIS_CONVERSATION_ID, SIGN_IN_MESSAGE} from './constants'
 import createBlocknativeOnboard from './createBlocknativeOnboard'
 import getIsRegisteredInProofOfHumanity from './getIsRegisteredInProofOfHumanity'
 import Content from './components/Content'
-import SignInStep from './components/SignInStep'
+import Button from './components/Button'
+import WalletIndicator from './components/WalletIndicator'
+import Step from './components/Step'
 import PolisConversation from './components/PolisConversation'
+
+import ProofOfHumanityLogo from './images/poh.svg'
 
 // TODO: remember their wallet? https://docs.blocknative.com/onboard#caching-wallet-selection
 //"wss://mainnet.infura.io/ws/v3/ec39a81039c945bd9063af6003109bf2"
@@ -17,9 +20,7 @@ let ethersProvider = null
 export default function App() {
   const [isDisconnected, setIsDisconnected] = useState(true)
   const [isSelectingWallet, setIsSelectingWallet] = useState(false)
-  //const [isConnecting, setIsConnecting] = useState(false);
   const [isWrongNetwork, setIsWrongNetwork] = useState(null)
-  const [isMissingAddress, setIsMissingAddress] = useState(null)
   const [address, setAddress] = useState(null)
   const [isCheckingRegistration, setIsCheckingRegistration] = useState(false)
   const [isRegistered, setIsRegistered] = useState(null)
@@ -31,6 +32,8 @@ export default function App() {
   const addressRef = useRef(null)
   const isSelectingWalletRef = useRef(false)
 
+  // TODO: handle state in a single object that gets updated all at once
+  // in order to avoid partially-handled state changes?
   async function handleOnboardStateChange() {
     // avoid handling the intermediary states that ocurr during wallet selection
     // because those states are weird: e.g. if `address` were `undefined`,
@@ -39,19 +42,15 @@ export default function App() {
     if (isSelectingWalletRef.current) return
 
     const newState = onboardRef.current.getState()
-    console.log('newState', newState)
 
-    const isDisconnected = !newState.wallet.provider
+    const isDisconnected =
+      !newState.wallet.provider || !newState.network || !newState.address
     setIsDisconnected(isDisconnected)
     if (isDisconnected) return
 
     const isWrongNetwork = newState.network !== NETWORK_ID
     setIsWrongNetwork(isWrongNetwork)
     if (isWrongNetwork) return
-
-    const isMissingAddress = !newState.address
-    setIsMissingAddress(isMissingAddress)
-    if (isMissingAddress) return
 
     setAddress(newState.address)
     addressRef.current = newState.address
@@ -97,7 +96,6 @@ export default function App() {
     isSelectingWalletRef.current = false
     setIsSelectingWallet(false)
 
-    console.log('handling state change cuz finished selecting/checking')
     handleOnboardStateChange()
   }
 
@@ -117,106 +115,109 @@ export default function App() {
     setIsSigning(false)
   }
 
-  function signOut() {
+  function reset() {
     onboardRef.current.walletReset()
     setSignature(null)
     handleOnboardStateChange()
   }
 
-  if (isDisconnected || isMissingAddress === true || isCheckingRegistration) {
-    return (
-      <Content>
-        <SignInStep
-          title="Connect Wallet"
-          subtitle="For signing in to Pol.is using Proof of Humanity"
-          button={
-            <button onClick={selectWallet} disabled={isSelectingWallet}>
-              Connect Wallet
-            </button>
-          }
-        />
-      </Content>
-    )
-  }
-
-  if (isWrongNetwork) {
-    return (
-      <Content>
-        <SignInStep
-          title="Change Network"
-          subtitle="To continue, please configure your wallet to use the ethereum mainnet"
-        />
-      </Content>
-    )
-  }
-
-  if (isRegistered === false) {
-    return (
-      <Content>
-        <SignInStep
-          title="Address Not Registered"
-          subtitle={
-            <>
-              <p>
-                Please select the wallet/address that you registered on Proof of
-                Humanity.
-              </p>
-
-              <p>
-                If you haven't registered yet, you can do so here:{' '}
-                <a
-                  href="https://proofofhumanity.id/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  https://proofofhumanity.id
-                </a>
-              </p>
-            </>
-          }
-          button={
-            <button onClick={() => onboardRef.current.walletReset()}>
-              Restart
-            </button>
-          }
-        />
-      </Content>
-    )
-  }
-
-  return isRegistered === true && !signature ? (
+  return (
     <Content>
-      <SignInStep
-        title="Sign In"
-        subtitle="Sign in to participate in the conversation on Pol.is"
-        button={
-          <button onClick={signIn} disabled={isSigning}>
-            Sign In with Proof of Humanity
-          </button>
-        }
-      />
-    </Content>
-  ) : (
-    <Content>
-      <PolisConversation
-        data-conversation_id={POLIS_CONVERSATION_ID}
-        xid={signature}
-        data-ucw="false"
-        style={{width: '80vw', maxHeight: '80vh'}}
-      />
+      {isDisconnected || isCheckingRegistration ? (
+        <ConnectWalletStep
+          selectWallet={selectWallet}
+          isSelectingWallet={isSelectingWallet}
+        />
+      ) : isWrongNetwork ? (
+        <WrongNetworkStep />
+      ) : isRegistered === false ? (
+        <NotRegisteredStep reset={reset} />
+      ) : !signature ? (
+        <SignInStep signIn={signIn} isSigning={isSigning} />
+      ) : (
+        <PolisConversation
+          data-conversation_id={POLIS_CONVERSATION_ID}
+          xid={signature}
+          data-ucw="false"
+        />
+      )}
+      {!isDisconnected && address && (
+        <WalletIndicator
+          address={address}
+          reset={reset}
+          style={{position: 'fixed', top: '30px', right: '30px'}}
+        />
+      )}
     </Content>
   )
+}
 
+function ConnectWalletStep({selectWallet, isSelectingWallet}) {
   return (
-    <div>
-      {address && (
-        <div style={{position: 'absolute', right: 10, top: 10}}>
-          {address}{' '}
-          <a href="#" onClick={signOut}>
-            Disconnect Wallet
-          </a>
-        </div>
-      )}
-    </div>
+    <Step
+      title="Connect Wallet"
+      subtitle="So you can sign in with Proof of Humanity"
+      image={<ProofOfHumanityLogo />}
+      button={
+        <Button
+          label="Connect Wallet"
+          onClick={selectWallet}
+          isBusy={isSelectingWallet}
+        />
+      }
+    />
+  )
+}
+
+function WrongNetworkStep() {
+  return (
+    <Step
+      title="Change Network"
+      subtitle="To continue, please configure your wallet to use the ethereum mainnet"
+    />
+  )
+}
+
+function NotRegisteredStep({reset}) {
+  return (
+    <Step
+      title="Address Not Registered"
+      subtitle={
+        <>
+          <p>
+            Please select the wallet/address that you registered on Proof of
+            Humanity.
+          </p>
+
+          <p>
+            If you haven't registered yet, you can do so here:{' '}
+            <a
+              href="https://proofofhumanity.id/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              https://proofofhumanity.id
+            </a>
+          </p>
+        </>
+      }
+      button={<Button label="Restart" onClick={reset} />}
+    />
+  )
+}
+
+function SignInStep({signIn, isSigning}) {
+  return (
+    <Step
+      title="Sign In"
+      subtitle="So you can join the Pol.is conversation"
+      image={
+        <img
+          style={{width: 120}}
+          src="https://cdn-images-1.medium.com/max/1200/1*vAUO1O51vT2Mt_W_qy1qBQ.png"
+        />
+      }
+      button={<Button label="Sign In" onClick={signIn} isBusy={isSigning} />}
+    />
   )
 }
