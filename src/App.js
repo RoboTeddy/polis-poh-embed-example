@@ -10,13 +10,6 @@ import WalletIndicator from './components/WalletIndicator'
 import Step from './components/Step'
 import PolisConversation from './components/PolisConversation'
 
-import ProofOfHumanityLogo from './images/poh.svg'
-
-// TODO: remember their wallet? https://docs.blocknative.com/onboard#caching-wallet-selection
-//"wss://mainnet.infura.io/ws/v3/ec39a81039c945bd9063af6003109bf2"
-
-let ethersProvider = null
-
 const initialState = Object.freeze({
   isDisconnected: true,
   isSelectingWallet: false,
