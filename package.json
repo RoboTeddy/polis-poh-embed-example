@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "parcel src/index.html",
-    "build": "parcel build src/index.html"
+    "build": "parcel build src/index.html",
+    "deploy": "netlify deploy"
   },
   "dependencies": {
     "@svgr/parcel-plugin-svgr": "5.5.0",
