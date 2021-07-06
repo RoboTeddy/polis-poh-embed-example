@@ -223,7 +223,6 @@ function NotRegisteredStep({reset}) {
           </p>
         </>
       }
-      button={<Button label="Restart" onClick={reset} />}
     />
   )
 }
