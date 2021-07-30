@@ -34,6 +34,7 @@ export default function App() {
   const onboardRef = useRef(null)
   const stateRef = useRef({...initialState})
   const [stateVersion, bumpStateVersion] = useStateVersion()
+  const polisConversationId = window.location.pathname.slice(1)
 
   // TODO: handle state in a single object that gets updated all at once
   // in order to avoid partially-handled state changes?
@@ -140,7 +141,9 @@ export default function App() {
   const state = stateRef.current
   return (
     <Content>
-      {state.isDisconnected || state.isCheckingRegistration ? (
+      {!polisConversationId ? (
+        <MissingPolisConversationIdStep />
+      ) : state.isDisconnected || state.isCheckingRegistration ? (
         <ConnectWalletStep
           selectWallet={selectWallet}
           isBusy={state.isSelectingWallet || state.isCheckingRegistration}
@@ -153,7 +156,7 @@ export default function App() {
         <SignInStep signIn={signIn} isSigning={state.isSigning} />
       ) : (
         <PolisConversation
-          data-conversation_id={POLIS_CONVERSATION_ID}
+          data-conversation_id={polisConversationId}
           xid={state.signature}
           data-ucw="false"
         />
@@ -166,6 +169,15 @@ export default function App() {
         />
       )}
     </Content>
+  )
+}
+
+function MissingPolisConversationIdStep() {
+  return (
+    <Step
+      title="Missing Polis Conversation Id"
+      subtitle={`Please include it in the url, like this: ${document.location.href}<polis conversation id here>`}
+    />
   )
 }
 
