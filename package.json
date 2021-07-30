@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "parcel src/index.html",
+    "netlify-dev": "yarn netlify dev",
     "build": "parcel build src/index.html",
     "deploy": "netlify deploy --prod"
   },
