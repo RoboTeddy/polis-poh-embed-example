@@ -1,7 +1,5 @@
 // Should probably be established using env with a default .env file
 
-export const SIGN_IN_MESSAGE =
-  "Sign in to 'polis-poh-embed-example' using Proof of Humanity"
 export const POH_CONTRACT_ADDRESS = '0xc5e9ddebb09cd64dfacab4011a0d5cedaf7c9bdb'
 
 // the following are mainly needed for blocknative

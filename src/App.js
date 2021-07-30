@@ -1,7 +1,7 @@
 import React, {useEffect, useState, useRef} from 'react'
 import {ethers} from 'ethers' // TODO: import more specific thing?
 
-import {NETWORK_ID, POLIS_CONVERSATION_ID, SIGN_IN_MESSAGE} from './constants'
+import {NETWORK_ID} from './constants'
 import createBlocknativeOnboard from './createBlocknativeOnboard'
 import getIsRegisteredInProofOfHumanity from './getIsRegisteredInProofOfHumanity'
 import Content from './components/Content'
@@ -119,7 +119,9 @@ export default function App() {
     try {
       state.isSigning = true
       bumpStateVersion()
-      const signature = await signer.signMessage(SIGN_IN_MESSAGE)
+      const signature = await signer.signMessage(
+        `Sign in to Pol.is conversation '${polisConversationId}' using Proof of Humanity`
+      )
       state.signature = signature
     } catch (error) {
       if (error.code === 4001) {
