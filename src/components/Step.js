@@ -6,7 +6,7 @@ const style = {
   alignItems: 'center',
   width: 320,
   padding: 30,
-  height: 320,
+  minHeight: 320,
   justifyContent: 'space-between',
 }
 

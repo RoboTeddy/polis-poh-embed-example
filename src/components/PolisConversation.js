@@ -16,7 +16,7 @@ export default function PolisConversation(props) {
   // set overflow to 'hidden' because while polis is loading its iframe
   // gets temporarily huge.
   return (
-    <div style={{width: 800, height: 569, borderRadius: 8}}>
+    <div style={{width: 800, borderRadius: 8}}>
       <div className="polis" {...props} />
     </div>
   )
