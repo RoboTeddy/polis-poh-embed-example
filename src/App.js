@@ -160,7 +160,6 @@ export default function App() {
         <PolisConversation
           data-conversation_id={polisConversationId}
           xid={state.signature}
-          data-ucw="false"
         />
       )}
       {!state.isDisconnected && state.address && (
