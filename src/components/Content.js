@@ -11,6 +11,8 @@ const contentStyle = {
   backgroundColor: 'white',
   borderRadius: 8,
   overflow: 'hidden',
+  marginTop: 40,
+  marginBottom: 40,
 }
 
 export default function Content({children}) {
