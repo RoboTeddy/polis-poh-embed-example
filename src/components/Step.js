@@ -29,7 +29,7 @@ const subtitleStyle = {
   textAlign: 'center',
 }
 
-export default function SignInStep({title, subtitle, image, button}) {
+export default function Step({title, subtitle, image, button}) {
   return (
     <div style={style}>
       <div style={topStyle}>
