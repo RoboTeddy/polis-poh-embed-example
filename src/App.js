@@ -159,7 +159,7 @@ export default function App() {
       ) : (
         <PolisConversation
           data-conversation_id={polisConversationId}
-          xid={state.signature}
+          data-xid={state.signature}
         />
       )}
       {!state.isDisconnected && state.address && (
