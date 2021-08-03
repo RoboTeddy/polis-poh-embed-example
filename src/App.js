@@ -119,9 +119,9 @@ export default function App() {
     try {
       state.isSigning = true
       bumpStateVersion()
-      const signature = await signer.signMessage(
-        `Sign in to Pol.is conversation '${polisConversationId}' using Proof of Humanity`
-      )
+      const message = `Sign in to Pol.is conversation '${polisConversationId}' using Proof of Humanity`
+      const signature = await signer.signMessage(message)
+      //ethers.utils.verifyMessage(message, signature) // recovers public key
       state.signature = signature
     } catch (error) {
       if (error.code === 4001) {
